@@ -1,0 +1,595 @@
+{
+  "manifest_schema_version": 3,
+  "sdk_version": "5.13.0",
+  "app_id": "cloudzero-connector",
+  "version": "0.1.0",
+  "name": "CloudZero",
+  "description": "Connect your own CloudZero account (bring your own API key from the CloudZero console) to read billing costs (by cloud provider, dimension, and granularity), billing dimensions, insights, roles, and AnyCost stream connections, plus a value-add spend overview report. Read-only in this release -- AnyCost data ingestion (pushing external cost data into CloudZero) is a separate pipeline capability deferred to v2.",
+  "icon": "icon.svg",
+  "actions_explicit": true,
+  "system": false,
+  "capabilities": [
+    "cloudzero:read"
+  ],
+  "tools": [
+    {
+      "name": "connect_cloudzero",
+      "description": "Connect your own CloudZero account by saving your API key (from the CloudZero console), after checking it actually works.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "create:connection"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "api_key": {
+            "default": "",
+            "description": "Your CloudZero API key (from the CloudZero console).",
+            "title": "Api Key",
+            "type": "string"
+          },
+          "label": {
+            "default": "",
+            "description": "Optional friendly label for this connection, e.g. 'Acme Inc CloudZero'.",
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "title": "ConnectCloudZeroParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "default": "",
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "title": "ProviderConnection",
+        "type": "object"
+      },
+      "event": "cloudzero-connected",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_cloudzero-connector_chat"
+    },
+    {
+      "name": "list_connections",
+      "description": "List the connected CloudZero accounts.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "description": "Explicit empty params model -- V17 disallows untyped handlers.",
+        "properties": {},
+        "title": "NoParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "ProviderConnection": {
+            "properties": {
+              "id": {
+                "default": "",
+                "title": "Id",
+                "type": "string"
+              },
+              "label": {
+                "default": "",
+                "title": "Label",
+                "type": "string"
+              }
+            },
+            "title": "ProviderConnection",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "connections": {
+            "items": {
+              "$ref": "#/$defs/ProviderConnection"
+            },
+            "title": "Connections",
+            "type": "array"
+          }
+        },
+        "title": "ProviderConnectionList",
+        "type": "object"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_cloudzero-connector_chat"
+    },
+    {
+      "name": "disconnect_cloudzero",
+      "description": "Disconnect a CloudZero account: deletes the saved API key. Nothing in CloudZero itself is changed.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "delete:connection"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "description": "Which connection to disconnect (see list_connections).",
+            "title": "Connection Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connection_id"
+        ],
+        "title": "DisconnectCloudZeroParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "deleted": {
+            "default": false,
+            "title": "Deleted",
+            "type": "boolean"
+          },
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "title": "DeleteResult",
+        "type": "object"
+      },
+      "event": "cloudzero-disconnected",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_cloudzero-connector_chat"
+    },
+    {
+      "name": "get_billing_costs",
+      "description": "Read CloudZero billing costs for a date range, with optional granularity, group-by dimension, and filter.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "default": "",
+            "description": "Which connected CloudZero account to use (see list_connections). Omit if only one is connected.",
+            "title": "Connection Id",
+            "type": "string"
+          },
+          "start_date": {
+            "description": "Start date, YYYY-MM-DD.",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "end_date": {
+            "description": "End date, YYYY-MM-DD.",
+            "title": "End Date",
+            "type": "string"
+          },
+          "granularity": {
+            "default": "daily",
+            "description": "One of: hourly, daily, weekly, monthly, yearly.",
+            "title": "Granularity",
+            "type": "string"
+          },
+          "group_by": {
+            "default": "",
+            "description": "Optional dimension name to group by, e.g. 'CloudProvider'.",
+            "title": "Group By",
+            "type": "string"
+          },
+          "filter_expr": {
+            "default": "",
+            "description": "Optional filter, e.g. 'CloudProvider=AWS'.",
+            "title": "Filter Expr",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_date",
+          "end_date"
+        ],
+        "title": "GetBillingCostsParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "start_date": {
+            "default": "",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "end_date": {
+            "default": "",
+            "title": "End Date",
+            "type": "string"
+          },
+          "granularity": {
+            "default": "",
+            "title": "Granularity",
+            "type": "string"
+          },
+          "total_cost": {
+            "default": 0.0,
+            "title": "Total Cost",
+            "type": "number"
+          },
+          "rows": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "title": "BillingCostsReport",
+        "type": "object"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_cloudzero-connector_chat"
+    },
+    {
+      "name": "list_billing_dimensions",
+      "description": "List billing dimensions (e.g. CloudProvider, Service, Team) configured on the connected CloudZero account.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "default": "",
+            "description": "Which connected CloudZero account to use (see list_connections). Omit if only one is connected.",
+            "title": "Connection Id",
+            "type": "string"
+          }
+        },
+        "title": "ListBillingDimensionsParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "count": {
+            "default": 0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "dimensions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Dimensions",
+            "type": "array"
+          }
+        },
+        "title": "DimensionList",
+        "type": "object"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_cloudzero-connector_chat"
+    },
+    {
+      "name": "list_insights",
+      "description": "List cost insights (CloudZero's own anomaly/opportunity findings) on the connected account.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "default": "",
+            "description": "Which connected CloudZero account to use (see list_connections). Omit if only one is connected.",
+            "title": "Connection Id",
+            "type": "string"
+          },
+          "limit": {
+            "default": 50,
+            "description": "Maximum insights to return.",
+            "maximum": 200,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "ListInsightsParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "count": {
+            "default": 0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "insights": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Insights",
+            "type": "array"
+          }
+        },
+        "title": "InsightList",
+        "type": "object"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_cloudzero-connector_chat"
+    },
+    {
+      "name": "list_roles",
+      "description": "List user roles configured on the connected CloudZero account.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "default": "",
+            "description": "Which connected CloudZero account to use (see list_connections). Omit if only one is connected.",
+            "title": "Connection Id",
+            "type": "string"
+          }
+        },
+        "title": "ListRolesParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "count": {
+            "default": 0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "roles": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Roles",
+            "type": "array"
+          }
+        },
+        "title": "RoleList",
+        "type": "object"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_cloudzero-connector_chat"
+    },
+    {
+      "name": "list_anycost_connections",
+      "description": "List AnyCost stream connections (external cost-data feeds) configured on the connected CloudZero account.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "default": "",
+            "description": "Which connected CloudZero account to use (see list_connections). Omit if only one is connected.",
+            "title": "Connection Id",
+            "type": "string"
+          }
+        },
+        "title": "ListAnycostConnectionsParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "count": {
+            "default": 0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "connections": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Connections",
+            "type": "array"
+          }
+        },
+        "title": "AnycostConnectionList",
+        "type": "object"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_cloudzero-connector_chat"
+    },
+    {
+      "name": "get_anycost_billing_drop",
+      "description": "Read one AnyCost stream connection's billing drop contents for a given month.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "default": "",
+            "description": "Which connected CloudZero account to use (see list_connections). Omit if only one is connected.",
+            "title": "Connection Id",
+            "type": "string"
+          },
+          "connection_id_cz": {
+            "description": "The CloudZero AnyCost stream connection id.",
+            "title": "Connection Id Cz",
+            "type": "string"
+          },
+          "month": {
+            "description": "Month to read, YYYY-MM.",
+            "title": "Month",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connection_id_cz",
+          "month"
+        ],
+        "title": "GetAnycostBillingDropParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "connection_id_cz": {
+            "default": "",
+            "title": "Connection Id Cz",
+            "type": "string"
+          },
+          "month": {
+            "default": "",
+            "title": "Month",
+            "type": "string"
+          },
+          "record": {
+            "additionalProperties": true,
+            "title": "Record",
+            "type": "object"
+          }
+        },
+        "title": "AnycostBillingDrop",
+        "type": "object"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_cloudzero-connector_chat"
+    },
+    {
+      "name": "get_spend_overview_report",
+      "description": "Value-add report: summarize CloudZero billing costs by cloud provider for a date range.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "default": "",
+            "description": "Which connected CloudZero account to use (see list_connections). Omit if only one is connected.",
+            "title": "Connection Id",
+            "type": "string"
+          },
+          "start_date": {
+            "description": "Start date, YYYY-MM-DD.",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "end_date": {
+            "description": "End date, YYYY-MM-DD.",
+            "title": "End Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_date",
+          "end_date"
+        ],
+        "title": "GetSpendOverviewParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "start_date": {
+            "default": "",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "end_date": {
+            "default": "",
+            "title": "End Date",
+            "type": "string"
+          },
+          "total_spend": {
+            "default": 0.0,
+            "title": "Total Spend",
+            "type": "number"
+          },
+          "by_provider": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "By Provider",
+            "type": "object"
+          }
+        },
+        "title": "SpendOverviewReport",
+        "type": "object"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_cloudzero-connector_chat"
+    }
+  ],
+  "signals": [],
+  "schedules": [],
+  "required_scopes": [],
+  "icon_size_bytes": 677,
+  "panels": [
+    {
+      "panel_id": "cloudzero_connect",
+      "slot": "left",
+      "title": "CloudZero",
+      "tree": {},
+      "icon": "",
+      "refresh": "manual",
+      "center_overlay": false
+    },
+    {
+      "panel_id": "cloudzero_connect_help",
+      "slot": "overlay",
+      "title": "How do I set this up?",
+      "tree": {},
+      "icon": "",
+      "refresh": "manual",
+      "center_overlay": false
+    },
+    {
+      "panel_id": "cloudzero_settings",
+      "slot": "center",
+      "title": "",
+      "tree": {},
+      "icon": "",
+      "refresh": "manual",
+      "center_overlay": false
+    }
+  ]
+}
