@@ -37,3 +37,17 @@ ext = Extension(
 )
 
 chat = ChatExtension(ext)
+
+
+@ext.health_check
+async def health_check(ctx) -> dict:
+    """Report whether a CloudZero API-key connection is configured."""
+    raw = await ctx.secrets.get("cloudzero_connections")
+    return {
+        "healthy": bool(raw),
+        "detail": (
+            "CloudZero connection configured."
+            if raw
+            else "Not connected yet — run connect_cloudzero."
+        ),
+    }
