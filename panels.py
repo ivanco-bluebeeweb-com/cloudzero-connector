@@ -57,8 +57,8 @@ def _connect_section() -> ui.UINode:
     return ui.Stack(direction="v", gap=2, children=[
         ui.Text("Connect a CloudZero account", variant="heading"),
         ui.Form(
+            action="connect_cloudzero",
             submit_label="Connect CloudZero",
-            on_submit=ui.Call("connect_cloudzero"),
             children=[
                 ui.Stack(direction="v", gap=1, children=[
                     ui.Text("Friendly label (optional)", variant="label"),
