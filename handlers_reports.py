@@ -38,8 +38,8 @@ async def get_spend_overview_report(ctx, params: GetSpendOverviewParams) -> Acti
             continue
         total += cost
         by_provider[provider] = by_provider.get(provider, 0.0) + cost
-    return ActionResult.ok(SpendOverviewReport(
+    return ActionResult.success(SpendOverviewReport(
         start_date=params.start_date, end_date=params.end_date,
         total_spend=round(total, 2),
         by_provider={k: round(v, 2) for k, v in by_provider.items()},
-    ))
+    ), summary="Spend overview report retrieved.")

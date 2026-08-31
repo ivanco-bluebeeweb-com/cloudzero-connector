@@ -77,7 +77,7 @@ async def connect_cloudzero(ctx, params: ConnectCloudZeroParams) -> ActionResult
     label = params.label or "CloudZero"
     connections.append({"id": conn_id, "api_key": params.api_key, "label": label})
     await _save_connections(ctx, connections)
-    return ActionResult.ok(ProviderConnection(id=conn_id, label=label))
+    return ActionResult.success(ProviderConnection(id=conn_id, label=label), summary="Cloudzero connected.")
 
 
 @chat.function(
@@ -88,9 +88,9 @@ async def connect_cloudzero(ctx, params: ConnectCloudZeroParams) -> ActionResult
 async def list_connections(ctx, params: NoParams) -> ActionResult:
     """List connected CloudZero accounts."""
     connections = await _load_connections(ctx)
-    return ActionResult.ok(ProviderConnectionList(
+    return ActionResult.success(ProviderConnectionList(
         connections=[ProviderConnection(id=c["id"], label=c.get("label", "CloudZero")) for c in connections]
-    ))
+    ), summary="Connections listed.")
 
 
 @chat.function(
@@ -106,4 +106,4 @@ async def disconnect_cloudzero(ctx, params: DisconnectCloudZeroParams) -> Action
     if len(remaining) == len(connections):
         return ActionResult.error("Connection not found.", code="CLOUDZERO_NOT_CONNECTED")
     await _save_connections(ctx, remaining)
-    return ActionResult.ok(DeleteResult(deleted=True, id=params.connection_id))
+    return ActionResult.success(DeleteResult(deleted=True, id=params.connection_id), summary="Cloudzero disconnected.")

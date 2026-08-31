@@ -44,10 +44,10 @@ async def get_billing_costs(ctx, params: GetBillingCostsParams) -> ActionResult:
             total += float(r.get("cost", 0) or 0)
         except (TypeError, ValueError):
             continue
-    return ActionResult.ok(BillingCostsReport(
+    return ActionResult.success(BillingCostsReport(
         start_date=params.start_date, end_date=params.end_date, granularity=params.granularity,
         total_cost=round(total, 2), rows=rows,
-    ))
+    ), summary="Billing costs retrieved.")
 
 
 @chat.function(
@@ -62,7 +62,7 @@ async def list_billing_dimensions(ctx, params: ListBillingDimensionsParams) -> A
         return err
     data = await cz.request(ctx, conn, "GET", "/v2/billing/dimensions", action="list billing dimensions")
     dims = data.get("dimensions", []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
-    return ActionResult.ok(DimensionList(count=len(dims), dimensions=dims))
+    return ActionResult.success(DimensionList(count=len(dims), dimensions=dims), summary="Billing dimensions listed.")
 
 
 @chat.function(
@@ -77,7 +77,7 @@ async def list_insights(ctx, params: ListInsightsParams) -> ActionResult:
         return err
     data = await cz.request(ctx, conn, "GET", "/v2/insights", params={"limit": params.limit}, action="list insights")
     items = data.get("insights", []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
-    return ActionResult.ok(InsightList(count=len(items), insights=items))
+    return ActionResult.success(InsightList(count=len(items), insights=items), summary="Insights listed.")
 
 
 @chat.function(
@@ -92,7 +92,7 @@ async def list_roles(ctx, params: ListRolesParams) -> ActionResult:
         return err
     data = await cz.request(ctx, conn, "GET", "/v2/roles", action="list roles")
     items = data.get("roles", []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
-    return ActionResult.ok(RoleList(count=len(items), roles=items))
+    return ActionResult.success(RoleList(count=len(items), roles=items), summary="Roles listed.")
 
 
 @chat.function(
@@ -107,7 +107,7 @@ async def list_anycost_connections(ctx, params: ListAnycostConnectionsParams) ->
         return err
     data = await cz.request(ctx, conn, "GET", "/v2/connections/anycost/stream", action="list AnyCost connections")
     items = data.get("connections", []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
-    return ActionResult.ok(AnycostConnectionList(count=len(items), connections=items))
+    return ActionResult.success(AnycostConnectionList(count=len(items), connections=items), summary="Anycost connections listed.")
 
 
 @chat.function(
@@ -125,4 +125,4 @@ async def get_anycost_billing_drop(ctx, params: GetAnycostBillingDropParams) -> 
         f"/v2/connections/anycost/stream/{params.connection_id_cz}/billing-drop/{params.month}",
         action="get AnyCost billing drop",
     )
-    return ActionResult.ok(AnycostBillingDrop(connection_id_cz=params.connection_id_cz, month=params.month, record=data if isinstance(data, dict) else {}))
+    return ActionResult.success(AnycostBillingDrop(connection_id_cz=params.connection_id_cz, month=params.month, record=data if isinstance(data, dict) else {}), summary="Anycost billing drop retrieved.")
