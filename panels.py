@@ -17,7 +17,7 @@ KNOWN UI COMPONENT PITFALLS (learned building Ramp/Brex Connectors,
 2026-08-29): ui.Form does NOT take a separate ui.Button(submit=True)
 child -- use submit_label="..." on ui.Form itself. ui.Input does NOT
 accept secret=True -- use ui.Password(param_name=..., placeholder=...)
-instead. ui.Stack does NOT accept full_width=True -- only ui.Button does.
+instead. ui.Stack does NOT accept -- only ui.Button does.
 """
 from __future__ import annotations
 
@@ -29,8 +29,7 @@ import handlers_connection as h
 
 def _settings_button() -> ui.UINode:
     return ui.Button(
-        "App settings", variant="secondary", size="sm", full_width=True,
-        icon="settings", on_click=ui.Call("__panel__cloudzero_settings"),
+        "App settings", variant="secondary", size="sm", icon="settings", on_click=ui.Call("__panel__cloudzero_settings"),
     )
 
 
@@ -71,8 +70,7 @@ def _connect_section() -> ui.UINode:
             ],
         ),
         ui.Button(
-            "How do I set this up?", variant="ghost", size="sm", full_width=True,
-            on_click=ui.Call("__panel__cloudzero_connect_help"),
+            "How do I set this up?", variant="ghost", size="sm", on_click=ui.Call("__panel__cloudzero_connect_help"),
         ),
     ])
 
